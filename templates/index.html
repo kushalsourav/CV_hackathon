@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsiness and Yawning Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='./style.css') }}">
+     <script>
+        let videoOn = false;
+        let maskOn = true; // Default mask status
+
+        // Function to send start/stop commands to the Flask server
+        function sendCommand(command) {
+            fetch(`/${command}`, { method: 'POST' }).then(() => {
+                const videoFeed = document.getElementById('video-feed');
+                if (command === 'start') {
+                    videoFeed.style.display = 'block';
+                    videoOn = true;
+                } else if (command === 'stop') {
+                    videoFeed.style.display = 'none';
+                    videoOn = false;
+                }
+            });
+        }
+
+        // Function to toggle the mask (Face Mesh tessellation)
+        function toggleMask() {
+            maskOn = !maskOn; // Toggle mask status
+            const maskButton = document.getElementById('mask-button');
+            maskButton.textContent = maskOn ? 'Enable Mask' : 'disable Mask';
+            fetch('/toggle_mask', { method: 'POST' }); // Send the toggle request to Flask
+        }
+
+        // Function to display alerts
+        function showAlert(message) {
+            const alertBox = document.getElementById('alert-box');
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
+
+        // Poll for alerts from the Flask server
+        async function fetchAlerts() {
+            while (true) {
+                const response = await fetch('/alerts');
+                const data = await response.json();
+                if (data.message) {
+                    showAlert(data.message);
+                }
+                await new Promise(r => setTimeout(r, 500)); // Poll every 500ms
+            }
+        }
+
+        window.onload = fetchAlerts;
+    </script>
+</head>
+<body>
+
+    <h1>Drowsiness and Yawning Detection System</h1>
+
+    <div class="container">
+        <h2>Purpose</h2>
+        <p>
+            The Drowsiness and Yawning Detection System aims to improve productivity and safety by monitoring users' eye and mouth movements through a webcam. This system provides real-time alerts to help prevent accidents caused by drowsiness and encourages users to take breaks when signs of fatigue are detected. 
+        </p>
+
+        <h2>How It Helps Students</h2>
+        <p>
+            This system is particularly useful for students who spend extended hours studying or working on their laptops. It helps them stay alert and maintain focus during study sessions, promoting healthy study habits. Key benefits for students include:
+        </p>
+        <ul>
+            <li>Detects when students become drowsy while studying.</li>
+            <li>Encourages timely breaks to prevent burnout and maintain productivity.</li>
+            <li>Reduces eye strain by monitoring and suggesting rest when needed.</li>
+            <li>Improves awareness about their study habits through real-time alerts.</li>
+        </ul>
+        <h2>Key Applications</h2>
+        <ul>
+            <li><strong>Driver Safety:</strong> Alerts drivers to prevent accidents caused by drowsiness during long trips or night driving.</li>
+            <li><strong>Workplace Productivity:</strong> Helps professionals working in focus-intensive environments, such as control rooms, coding, or designing, to stay alert and avoid burnout.</li>
+            <li><strong>Healthcare Monitoring:</strong> Provides a tool for caregivers to monitor patients for signs of fatigue or reduced alertness.</li>
+            <li><strong>Remote Work or Study:</strong> Assists remote workers or students to maintain focus and take timely breaks during extended screen time.</li>
+            <li><strong>Public Safety:</strong> Useful in monitoring personnel in critical roles, such as air traffic controllers or security staff, to ensure alertness during shifts.</li>
+        </ul>
+    </div>
+
+    <div id="alert-box" class="alert-box"></div>
+
+
+    <div style="text-align: center;">
+        <button onclick="sendCommand('start')">Start</button>
+        <button onclick="sendCommand('stop')">Stop</button>
+        <button id="mask-button" onclick="toggleMask()">Enable Mask</button>
+    </div>
+
+    <!-- Video Feed -->
+    <div style="text-align: center;">
+        <img id="video-feed" src="/video_feed" alt="Video Feed">
+    </div>
+<div class="container">
+
+
+    <h1>Code Documentation </h1>
+
+    <h2>Overview</h2>
+    <p>This system uses a Flask-based web application to monitor a person's eye and mouth movements via webcam. It detects signs of drowsiness and yawning using facial landmark analysis through the MediaPipe library. The system provides real-time alerts through text and voice notifications when the user shows signs of drowsiness or yawning.</p>
+
+    <h2>Features</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Facial Landmark Detection</td>
+                <td>Uses MediaPipe FaceMesh to track facial landmarks for detecting eye and mouth movements.</td>
+            </tr>
+            <tr>
+                <td>Drowsiness Detection</td>
+                <td>Monitors the Eye Aspect Ratio (EAR) to detect drowsiness. If EAR falls below a threshold for a specified duration, an alert is triggered.</td>
+            </tr>
+            <tr>
+                <td>Yawning Detection</td>
+                <td>Uses the Mouth Aspect Ratio (MAR) to detect yawning. If MAR exceeds a threshold for a specified duration, an alert is triggered.</td>
+            </tr>
+            <tr>
+                <td>Real-time Video Streaming</td>
+                <td>Streams the webcam feed to the web interface, showing the facial landmarks and alert notifications.</td>
+            </tr>
+            <tr>
+                <td>Voice Alerts</td>
+                <td>Generates audio alerts using Google Text-to-Speech (gTTS) and plays them using the pygame library.</td>
+            </tr>
+            <tr>
+                <td>Mask Overlay Toggle</td>
+                <td>Allows toggling the display of facial landmarks on the webcam feed (facial mesh).</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Technologies Used</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Technology</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Flask</td>
+                <td>A lightweight web framework used to create the server and handle requests.</td>
+            </tr>
+            <tr>
+                <td>MediaPipe</td>
+                <td>A library by Google for real-time computer vision tasks, used here for facial landmark detection.</td>
+            </tr>
+            <tr>
+                <td>OpenCV</td>
+                <td>A library for computer vision tasks, used here for webcam feed capture and frame processing.</td>
+            </tr>
+            <tr>
+                <td>gTTS (Google Text-to-Speech)</td>
+                <td>A Python library and CLI tool to extract speech from text, used for generating voice alerts.</td>
+            </tr>
+            <tr>
+                <td>pygame</td>
+                <td>A library used for handling the playing of audio alerts.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Code Explanation</h2>
+    <p>The code is structured as follows:</p>
+
+    <h3>1. Libraries and Initialization</h3>
+    <p>The necessary libraries are imported, and variables are initialized for controlling various parameters such as the drowsiness detection thresholds and the state of the mask overlay.</p>
+
+    <h3>2. Eye and Mouth Aspect Ratio Calculation</h3>
+    <p>The <strong>calculate_ear()</strong> and <strong>calculate_mar()</strong> functions calculate the Eye Aspect Ratio (EAR) and Mouth Aspect Ratio (MAR) from the facial landmarks, which are used for drowsiness and yawning detection.</p>
+
+    <h3>3. Video Stream and FaceMesh Processing</h3>
+    <p>The <strong>generate_frames()</strong> function captures frames from the webcam, processes them to extract facial landmarks, and checks the EAR and MAR values to detect drowsiness or yawning. It triggers alerts when these thresholds are exceeded.</p>
+
+    <h3>4. Voice Alert Function</h3>
+    <p>The <strong>voice_alert()</strong> function generates a voice alert using gTTS and plays it through pygame.</p>
+
+    <h3>5. Flask Routes</h3>
+    <p>Several Flask routes are defined to handle different functionalities:</p>
+    <ul>
+        <li><strong>/toggle_mask</strong> – Toggles the display of the facial landmarks on the video feed.</li>
+        <li><strong>/alerts</strong> – Returns the most recent alert message (if any).</li>
+        <li><strong>/video_feed</strong> – Streams the webcam feed with face landmarks and alerts.</li>
+        <li><strong>/start</strong> – Starts the drowsiness and yawning detection process.</li>
+        <li><strong>/stop</strong> – Stops the drowsiness and yawning detection process.</li>
+    </ul>
+
+    <h2>Configuration and Customization</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Setting</th>
+                <th>Default Value</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>EYE_AR_THRESH</td>
+                <td>0.25</td>
+                <td>The threshold below which drowsiness is detected based on the Eye Aspect Ratio (EAR).</td>
+            </tr>
+            <tr>
+                <td>YAWN_THRESH</td>
+                <td>0.6</td>
+                <td>The threshold above which yawning is detected based on the Mouth Aspect Ratio (MAR).</td>
+            </tr>
+            <tr>
+                <td>DURATION_THRESH</td>
+                <td>1.5</td>
+                <td>The minimum duration (in seconds) for which the EAR or MAR must be below or above the threshold to trigger an alert.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Conclusion</h2>
+    <p>This system provides real-time monitoring and alerts for drowsiness and yawning using webcam-based facial landmark analysis. It can be useful for improving alertness during tasks such as driving or operating machinery.</p>
+
+</div>
+</body>
+</html>
